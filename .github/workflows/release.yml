@@ -17,8 +17,8 @@ jobs:
       - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 6.0.x
-      - name: Build release
-        run: dotnet build -c Release
+      - name: Pack release
+        run: dotnet pack -c Release /p:Version=0.0.1
       - name: Publish the package to nuget.org
         run: dotnet nuget push */bin/Release/*.nupkg -k $NUGET_API_TOKEN -s https://api.nuget.org/v3/index.json
         env:
