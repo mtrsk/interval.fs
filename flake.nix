@@ -1,5 +1,5 @@
 {
-  description = "Sharpie monorepo";
+  description = "Development Environment";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
