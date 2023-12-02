@@ -4,6 +4,37 @@ module Functions =
     open Interval.Core
     open Interval.Helpers
 
+    // https://www.fssnip.net/5D/title/Weighted-QuickUnion-with-Path-Compression
+    type DisjointSet (n: int) =
+        // Initialize each element with its index as the parent
+        let id = Array.init n id
+        // Number of elements rooted at i
+        let sz = Array.create n 1
+
+        let rec root i =
+            if i = id.[i] then i
+            else
+                // Path compression
+                id.[i] <- root id.[i]
+                id.[i]
+
+        member this.Find(p, q) = root p = root q
+
+        member this.Unite(p, q) =
+            let i = root p
+            let j = root q
+            if sz.[i] < sz.[j] then
+                id.[i] <- j
+                sz.[j] <- sz.[j] + sz.[i]
+            else
+                id.[j] <- i
+                sz.[i] <- sz.[i] + sz.[j]
+
+        member this.GetIds() = id
+
+        override this.ToString() =
+            $"%A{Array.zip id sz}"
+
     /// <summary>
     /// Computes the intersection of two bounded intervals
     /// </summary>
@@ -34,10 +65,47 @@ module Functions =
             let maxEnd = max i1.End i2.End
 
             if minEnd < maxStart then
-                Union({ Start = minStart; End = minEnd }, { Start = maxStart; End = maxEnd })
+                Union(Interval { Start = minStart; End = minEnd }, Interval { Start = maxStart; End = maxEnd })
                 |> Choice2Of2
             else
                 Interval { Start = minStart; End = maxEnd } |> Choice1Of2
+
+    let merge<'T when 'T: equality and 'T: comparison> (is: Interval<'T> list) =
+        let rec loop (intervals: Interval<'T> list) (index: int) (clusters: DisjointSet) =
+            match intervals with
+            | [] -> clusters
+            | [x] ->
+                let _ =
+                    is
+                    |> List.removeAt(index)
+                    |> List.mapi (fun i item ->
+                        match union x item with
+                        | Choice1Of2 interval ->
+                            clusters.Unite(index, i)
+                        | Choice2Of2 union -> ()
+                    )
+                clusters
+            | x::xs ->
+                let _ =
+                    is
+                    |> List.removeAt(index)
+                    |> List.mapi (fun i item ->
+                        match union x item with
+                        | Choice1Of2 interval -> clusters.Unite(index, i)
+                        | Choice2Of2 union -> ()
+                    )
+                loop xs (index + 1) clusters
+
+        let forest = DisjointSet(is.Length)
+        let output =
+            loop is 0 forest
+            |> (fun x -> x.GetIds())
+            |> List.ofArray
+            |> List.zip is
+            |> List.groupBy snd
+            |> List.map (fun (_, y) -> y |> List.map fst)
+
+        output
 
     /// <summary>
     /// Inverts a relation

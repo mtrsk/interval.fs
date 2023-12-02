@@ -16,10 +16,14 @@ let y3 = { Value = 8; Kind = Included}
 let x4 = { Value = 6; Kind = Excluded}
 let y4 = { Value = 10; Kind = Included}
 
+let x5 = { Value = 11; Kind = Included}
+let y5 = { Value = 12; Kind = Included}
+
 let i1 = Interval { Start = x1; End = y1 }
 let i2 = Interval { Start = x2; End = y2 }
 let i3 = Interval { Start = x3; End = y3 }
 let i4 = Interval { Start = x4; End = y4 }
+let i5 = Interval { Start = x5; End = y5 }
 
 let intersection12 = intersection i1 i2
 intersection12
@@ -42,3 +46,6 @@ let r3 = relate i1 i3
 printfn $"{i1} is {r3} to {i3}"
 let r4 = relate i3 i4
 printfn $"{i3} is {r4} to {i4}"
+
+let union = [ i1; i2; i3; i4; i5 ]
+merge(union)

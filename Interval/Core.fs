@@ -8,6 +8,12 @@ module Core =
         | Included
         | Excluded
 
+        static member (+) (a: BoundaryKind, b: BoundaryKind) =
+            match a,b with
+            | Included,  _ -> Included
+            | _, Included -> Included
+            | Excluded, Excluded -> Excluded
+
         override this.Equals other =
             match other with
             | :? BoundaryKind as k ->
@@ -45,7 +51,6 @@ module Core =
     type Boundary<'T when 'T: equality and 'T: comparison> =
         { Value: 'T
           Kind: BoundaryKind }
-
         override this.Equals other =
             match other with
             | :? Boundary<'T> as b -> this.Value = b.Value && this.Kind = b.Kind
@@ -66,13 +71,21 @@ module Core =
                     | n -> n
                 | _ -> raise (ArgumentException $"Object type for {other} must match")
 
-
     /// <summary>
     /// Represents a bounded interval with start and end boundaries of type 'T.
     /// </summary>
     type BoundedInterval<'T when 'T: equality and 'T: comparison> =
         { Start: Boundary<'T>
           End: Boundary<'T> }
+        static member (+) (a: BoundedInterval<'T>, b: BoundedInterval<'T>) =
+            let minStart = min a.Start b.Start
+            let maxStart = max a.Start b.Start
+            let minEnd = min a.End b.End
+            let maxEnd = max a.End b.End
+            if minEnd < maxStart then
+                [ { Start = minStart; End = minEnd }; { Start = maxStart; End = maxEnd } ]
+            else
+                [ { Start = minStart; End = maxEnd } ]
 
     /// <summary>
     /// Represents an interval, which can be either Empty or a BoundedInterval of type 'T.
@@ -82,10 +95,10 @@ module Core =
         | Interval of BoundedInterval<'T>
 
     /// <summary>
-    /// Represents a union of two bounded intervals of type 'T.
+    /// Represents a union of two intervals of type 'T.
     /// </summary>
     type Union<'T when 'T: equality and 'T: comparison> =
-        | Union of lesser: BoundedInterval<'T> * greater: BoundedInterval<'T>
+        Union of lesser: Interval<'T> * greater: Interval<'T>
 
     /// <summary>
     /// Represents different temporal relations between intervals.
