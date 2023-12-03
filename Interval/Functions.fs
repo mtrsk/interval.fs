@@ -5,14 +5,15 @@ module Functions =
     open Interval.Helpers
 
     // https://www.fssnip.net/5D/title/Weighted-QuickUnion-with-Path-Compression
-    type DisjointSet (n: int) =
+    type DisjointSet(n: int) =
         // Initialize each element with its index as the parent
         let id = Array.init n id
         // Number of elements rooted at i
         let sz = Array.create n 1
 
         let rec root i =
-            if i = id.[i] then i
+            if i = id.[i] then
+                i
             else
                 // Path compression
                 id.[i] <- root id.[i]
@@ -23,6 +24,7 @@ module Functions =
         member this.Unite(p, q) =
             let i = root p
             let j = root q
+
             if sz.[i] < sz.[j] then
                 id.[i] <- j
                 sz.[j] <- sz.[j] + sz.[i]
@@ -32,8 +34,7 @@ module Functions =
 
         member this.GetIds() = id
 
-        override this.ToString() =
-            $"%A{Array.zip id sz}"
+        override this.ToString() = $"%A{Array.zip id sz}"
 
     /// <summary>
     /// Computes the intersection of two bounded intervals
@@ -74,29 +75,29 @@ module Functions =
         let rec loop (intervals: Interval<'T> list) (index: int) (clusters: DisjointSet) =
             match intervals with
             | [] -> clusters
-            | [x] ->
+            | [ x ] ->
                 let _ =
                     is
-                    |> List.removeAt(index)
+                    |> List.removeAt (index)
                     |> List.mapi (fun i item ->
                         match union x item with
-                        | Choice1Of2 interval ->
-                            clusters.Unite(index, i)
-                        | Choice2Of2 union -> ()
-                    )
+                        | Choice1Of2 _interval -> clusters.Unite(index, i)
+                        | Choice2Of2 _union -> ())
+
                 clusters
-            | x::xs ->
+            | x :: xs ->
                 let _ =
                     is
-                    |> List.removeAt(index)
+                    |> List.removeAt (index)
                     |> List.mapi (fun i item ->
                         match union x item with
-                        | Choice1Of2 interval -> clusters.Unite(index, i)
-                        | Choice2Of2 union -> ()
-                    )
+                        | Choice1Of2 _interval -> clusters.Unite(index, i)
+                        | Choice2Of2 _union -> ())
+
                 loop xs (index + 1) clusters
 
         let forest = DisjointSet(is.Length)
+
         let output =
             loop is 0 forest
             |> (fun x -> x.GetIds())

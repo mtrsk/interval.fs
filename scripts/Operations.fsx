@@ -47,5 +47,6 @@ printfn $"{i1} is {r3} to {i3}"
 let r4 = relate i3 i4
 printfn $"{i3} is {r4} to {i4}"
 
-let union = [ i1; i2; i3; i4; i5 ]
-merge(union)
+let intervals = [ i1; i2; i3; i4; i5 ]
+let clusters = merge(intervals)
+clusters
