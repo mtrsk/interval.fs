@@ -17,7 +17,7 @@ jobs:
         with:
           dotnet-version: 6.0.x
       - name: Pack release
-        run: dotnet pack -c Release /p:Version=${{ github.ref_name }}
+        run: dotnet pack -c Release /p:Version=$(sed 's/v//g' ${{ github.ref_name }})
       - name: Publish the package to nuget.org
         run: dotnet nuget push */bin/Release/*.nupkg -k "${NUGET_API_KEY}" -s "https://api.nuget.org/v3/index.json" --skip-duplicate
         env:
