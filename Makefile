@@ -9,7 +9,7 @@ export
 .PHONY
 test:
 	@echo "Running testing suite..."
-	dotnet run --project Interval.Tests/ --no-build --verbosity normal
+	dotnet run --project "Interval.Tests" --no-build --verbosity normal
 
 pack:
 	@echo "Packing release: $(RELEASE)"
