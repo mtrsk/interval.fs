@@ -6,14 +6,18 @@ NUGET_SOURCE = "https://api.nuget.org/v3/index.json"
 -include .env
 export
 
+test:
+	@echo "Running testing suite..."
+	dotnet run --project Interval.Tests/ --no-build --verbosity normal
+
 pack:
-	echo "Packing release: $(RELEASE)"
+	@echo "Packing release: $(RELEASE)"
 	rm -f */bin/Release/*.nupkg
 	dotnet pack -c Release /p:Version=$$(echo $(RELEASE) | sed 's/v//g')
 
 push:
-	echo "Pushing release '$(RELEASE)' to "
-	dotnet nuget push */bin/Release/*.nupkg -k "${NUGET_API_KEY}" -s ${NUGET_SOURCE} #--skip-duplicate
+	@echo "Pushing release '$(RELEASE)' to "
+	dotnet nuget push */bin/Release/*.nupkg -k "${NUGET_API_KEY}" -s ${NUGET_SOURCE} --skip-duplicate
 
 delete:
 	dotnet nuget delete ${PACKAGE_NAME} $$(echo $(RELEASE) | sed 's/v//g') \

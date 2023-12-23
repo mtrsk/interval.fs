@@ -3,6 +3,8 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <IsPublishable>false</IsPublishable>
+        <IsPackable>false</IsPackable>
+        <GenerateProgramFile>false</GenerateProgramFile>
         <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
 

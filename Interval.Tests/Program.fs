@@ -1,6 +1,5 @@
-﻿open Expecto
-
-module Main =
+﻿module Main =
+    open Expecto
     let tests =
         testList "Tests" [
             Interval.Tests.Intersection.unitTests
