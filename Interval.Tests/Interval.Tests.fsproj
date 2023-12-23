@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <IsPublishable>false</IsPublishable>
+        <IsPackable>false</IsPackable>
+        <TargetFramework>net6.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Expecto" Version="10.1.0" />
+        <PackageReference Include="Expecto.FsCheck" Version="10.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="Shared.fs" />
+        <Compile Include="Intersection.fs" />
+        <Compile Include="Union.fs" />
+        <Compile Include="Program.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Interval\Interval.fsproj" />
+    </ItemGroup>
+
+</Project>

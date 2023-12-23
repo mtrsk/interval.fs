@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 6.0.x
+      - name: Test before releasing
+        run: make test
       - name: Pack release
         run: dotnet pack -c Release /p:Version=$(echo ${{ github.ref_name }} | sed 's/v//g')
       - name: Publish the package to nuget.org
