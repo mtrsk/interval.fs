@@ -6,7 +6,9 @@ NUGET_SOURCE = "https://api.nuget.org/v3/index.json"
 -include .env
 export
 
-.PHONY
+all : test pack push delete
+.PHONY : all
+
 test:
 	@echo "Running testing suite..."
 	dotnet run --project "Interval.Tests" --no-build --verbosity normal
