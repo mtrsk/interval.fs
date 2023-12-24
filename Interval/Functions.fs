@@ -1,5 +1,7 @@
 ﻿namespace Interval
 
+open Interval.Core
+
 module Functions =
     open Interval.Core
     open Interval.Helpers
@@ -7,17 +9,17 @@ module Functions =
     // https://www.fssnip.net/5D/title/Weighted-QuickUnion-with-Path-Compression
     type DisjointSet(n: int) =
         // Initialize each element with its index as the parent
-        let id = Array.init n id
+        let ids = Array.init n id
         // Number of elements rooted at i
         let sz = Array.create n 1
 
         let rec root i =
-            if i = id.[i] then
+            if i = ids.[i] then
                 i
             else
                 // Path compression
-                id.[i] <- root id.[i]
-                id.[i]
+                ids.[i] <- root ids.[i]
+                ids.[i]
 
         member this.Find(p, q) = root p = root q
 
@@ -26,87 +28,106 @@ module Functions =
             let j = root q
 
             if sz.[i] < sz.[j] then
-                id.[i] <- j
+                ids.[i] <- j
                 sz.[j] <- sz.[j] + sz.[i]
             else
-                id.[j] <- i
+                ids.[j] <- i
                 sz.[i] <- sz.[i] + sz.[j]
 
-        member this.GetIds() = id
+        member this.GetIds() = ids
 
-        override this.ToString() = $"%A{Array.zip id sz}"
+        override this.ToString() = $"%A{Array.zip ids sz}"
 
     /// <summary>
     /// Computes the intersection of two bounded intervals
     /// </summary>
-    let intersection<'T when 'T: equality and 'T: comparison> (itv1: Interval<'T>) (itv2: Interval<'T>) =
-        match itv1, itv2 with
+    let rec intersection<'T when 'T: equality and 'T: comparison> (a: Interval<'T>) (b: Interval<'T>) =
+        match a, b with
         | Empty, _ -> Empty
         | _, Empty -> Empty
-        | Interval i1, Interval i2 ->
+        | Singleton i1, Singleton i2 ->
             let newStart = max i1.Start i2.Start
             let newEnd = min i1.End i2.End
 
             if newStart < newEnd then
-                Interval { Start = newStart; End = newEnd }
+                Singleton { Start = newStart; End = newEnd }
             else
                 Empty
+        | Singleton s , Union u
+        | Union u, Singleton s ->
+            if Set.exists (fun x -> intersection x (Singleton s) <> Empty) (Set.map Singleton u) then
+                let group = Set.add s u
+                Union group
+            else Union u
+        | Union u1, Union u2 -> failwith "todo"
 
     /// <summary>
     /// Computes the union of two bounded intervals
     /// </summary>
     let union<'T when 'T: equality and 'T: comparison> (itv1: Interval<'T>) (itv2: Interval<'T>) =
         match itv1, itv2 with
-        | Empty, i2 -> i2 |> Choice1Of2
-        | i1, Empty -> i1 |> Choice1Of2
-        | Interval i1, Interval i2 ->
+        | Empty, i2 -> i2
+        | i1, Empty -> i1
+        | Singleton i1, Singleton i2 ->
             let minStart = min i1.Start i2.Start
             let maxStart = max i1.Start i2.Start
             let minEnd = min i1.End i2.End
             let maxEnd = max i1.End i2.End
 
             if minEnd < maxStart then
-                Union(Interval { Start = minStart; End = minEnd }, Interval { Start = maxStart; End = maxEnd })
-                |> Choice2Of2
+                let union =
+                    [ { Start = minStart; End = minEnd }; { Start = maxStart; End = maxEnd } ]
+                    |> Set.ofList
+                Union union
             else
-                Interval { Start = minStart; End = maxEnd } |> Choice1Of2
+                Singleton { Start = minStart; End = maxEnd }
+        | Singleton s, Union u
+        | Union u, Singleton s ->
+            let group = Set.add s u
+            Union group
+        | Union u1, Union u2 ->
+            let group = Set.union u1 u2
+            Union group
 
-    let merge<'T when 'T: equality and 'T: comparison> (is: Interval<'T> list) =
-        let rec loop (intervals: Interval<'T> list) (index: int) (clusters: DisjointSet) =
+    let merge<'T when 'T: equality and 'T: comparison> (bs: BoundedInterval<'T> list) =
+        let isSingleton x item =
+            match union (Singleton x) (Singleton item) with
+            | Singleton _s -> true
+            | _ -> false
+        let update index x (clusters: DisjointSet) =
+            bs
+            |> List.removeAt index
+            |> List.mapi (fun i item -> if isSingleton x item then clusters.Unite(index, i) else ())
+        let toSet (i: Interval<'T>) =
+            match i with
+            | Empty -> Set.empty
+            | Singleton boundedInterval -> Set.add boundedInterval Set.empty
+            | Union boundedIntervalSet -> boundedIntervalSet
+        let rec loop (intervals: BoundedInterval<'T> list) (index: int) (clusters: DisjointSet) =
             match intervals with
             | [] -> clusters
             | [ x ] ->
-                let _ =
-                    is
-                    |> List.removeAt (index)
-                    |> List.mapi (fun i item ->
-                        match union x item with
-                        | Choice1Of2 _interval -> clusters.Unite(index, i)
-                        | Choice2Of2 _union -> ())
-
+                update index x clusters |> ignore
                 clusters
             | x :: xs ->
-                let _ =
-                    is
-                    |> List.removeAt (index)
-                    |> List.mapi (fun i item ->
-                        match union x item with
-                        | Choice1Of2 _interval -> clusters.Unite(index, i)
-                        | Choice2Of2 _union -> ())
-
+                update index x clusters |> ignore
                 loop xs (index + 1) clusters
 
-        let forest = DisjointSet(is.Length)
-
-        let output =
-            loop is 0 forest
-            |> (fun x -> x.GetIds())
+        let forest = DisjointSet(bs.Length)
+        let sets = (loop bs 0 forest).GetIds()
+        let groups =
+            sets
             |> List.ofArray
-            |> List.zip is
+            |> List.zip bs
             |> List.groupBy snd
-            |> List.map (fun (_, y) -> y |> List.map fst)
-
-        output
+            |> List.map (fun (_, y) -> y |> List.map fst |> List.sort |> List.map Singleton)
+            |> List.map (List.fold union Empty)
+        match groups with
+        | [] -> Empty
+        | [x] -> x
+        | _ ->
+            let output = groups |> List.map toSet |> Set.ofList |> Set.fold Set.union Set.empty
+            Union output
 
     /// <summary>
     /// Inverts a relation
@@ -144,9 +165,10 @@ module Functions =
         | false, true -> Contains
         | false, false ->
             match (union a b, precedes a b, isEmpty <| intersection a b) with
-            | Choice1Of2 _interval, true, true -> Meets
-            | Choice1Of2 _interval, true, false -> Overlaps
-            | Choice1Of2 _interval, false, true -> MetBy
-            | Choice1Of2 _interval, false, false -> OverlappedBy
-            | Choice2Of2 _union, true, _ -> Before
-            | Choice2Of2 _union, false, _ -> After
+            | Singleton _interval, true, true -> Meets
+            | Singleton _interval, true, false -> Overlaps
+            | Singleton _interval, false, true -> MetBy
+            | Singleton _interval, false, false -> OverlappedBy
+            | Union _union, true, _ -> Before
+            | Union _union, false, _ -> After
+            | _ -> failwith "todo"
