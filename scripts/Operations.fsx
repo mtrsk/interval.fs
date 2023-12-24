@@ -19,11 +19,17 @@ let y4 = { Value = 10; Kind = Included}
 let x5 = { Value = 11; Kind = Included}
 let y5 = { Value = 12; Kind = Included}
 
-let i1 = Interval { Start = x1; End = y1 }
-let i2 = Interval { Start = x2; End = y2 }
-let i3 = Interval { Start = x3; End = y3 }
-let i4 = Interval { Start = x4; End = y4 }
-let i5 = Interval { Start = x5; End = y5 }
+let b1 = { Start = x1; End = y1 }
+let b2 = { Start = x2; End = y2 }
+let b3 = { Start = x3; End = y3 }
+let b4 = { Start = x4; End = y4 }
+let b5 = { Start = x5; End = y5 }
+
+let i1 = Singleton b1
+let i2 = Singleton b2
+let i3 = Singleton b3
+let i4 = Singleton b4
+let i5 = Singleton b5
 
 let intersection12 = intersection i1 i2
 intersection12
@@ -47,6 +53,6 @@ printfn $"{i1} is {r3} to {i3}"
 let r4 = relate i3 i4
 printfn $"{i3} is {r4} to {i4}"
 
-let intervals = [ i1; i2; i3; i4; i5 ]
+let intervals = [ b1; b2; b3; b4; b5 ]
 let clusters = merge(intervals)
 clusters

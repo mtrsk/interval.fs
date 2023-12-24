@@ -92,13 +92,8 @@ module Core =
     /// </summary>
     type Interval<'T when 'T: equality and 'T: comparison> =
         | Empty
-        | Interval of BoundedInterval<'T>
-
-    /// <summary>
-    /// Represents a union of two intervals of type 'T.
-    /// </summary>
-    type Union<'T when 'T: equality and 'T: comparison> =
-        Union of lesser: Interval<'T> * greater: Interval<'T>
+        | Singleton of BoundedInterval<'T>
+        | Union of BoundedInterval<'T> Set
 
     /// <summary>
     /// Represents different temporal relations between intervals.
