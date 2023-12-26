@@ -11,7 +11,7 @@ all : test pack push delete
 
 test:
 	@echo "Running testing suite..."
-	dotnet run --project "Interval.Tests" --verbosity normal
+	nix develop --impure --command dotnet run --project "Interval.Tests" --verbosity normal
 
 pack:
 	@echo "Packing release: $(RELEASE)"
