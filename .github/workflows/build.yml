@@ -20,7 +20,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      token: ${{ github.token }}
+      with:
+        token: ${{ github.token }}
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
