@@ -12,8 +12,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - uses: actions/setup-dotnet@v3
+        uses: actions/checkout@v4
+        token: ${{ github.token }}
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 6.0.x
       - name: Test before releasing

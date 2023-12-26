@@ -3,11 +3,15 @@ name: Build
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
     paths:
       - 'Interval/**'
       - 'Interval.Tests/**'
+      - '.github/**'
+  pull_request:
+    paths:
+      - 'Interval/**'
+      - 'Interval.Tests/**'
+      - '.github/**'
 
 jobs:
   build:
@@ -15,14 +19,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ github.token }}
+
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.0.x
 
     - name: Install Nix
-      uses: cachix/install-nix-action@v17
+      uses: cachix/install-nix-action@v24
       with:
         # Mostly to avoid GitHub rate limiting
         extra_nix_config: |
