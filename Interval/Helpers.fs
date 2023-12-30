@@ -8,6 +8,13 @@ module Helpers =
         | Empty -> true
         | _ -> false
 
+    let isNotEmpty = (fun x -> isEmpty x |> not)
+
+    let tryGetSingleton (i: Interval<'T>) =
+        match i with
+        | Singleton x -> Some x
+        | _ -> None
+
     let isEqual (a: Interval<'T>) (b: Interval<'T>) =
         match a, b with
         | Empty, Empty -> true
@@ -34,11 +41,9 @@ module Helpers =
         | Singleton s1, Singleton s2 -> s1.Start < s2.Start
         | _ -> false
 
-    let parseInterval<'T when 'T: equality and 'T: comparison> (b1: Boundary<'T>) (b2: Boundary<'T>) =
-        if b1 < b2 then
-            Singleton { Start = b1; End = b2 } |> Ok
-        else
-            InvalidArgument $"Argument #1 '{b1}' is greater or equal than #2 '{b2}'" |> Error
-
-    let createInterval<'T when 'T: equality and 'T: comparison> (b1: Boundary<'T>) (b2: Boundary<'T>) =
-        if b1 < b2 then Singleton { Start = b1; End = b2 } else Empty
+    // TODO: Refactor this
+    let cartesian<'T when 'T: equality and 'T: comparison> (s1: Set<'T>) (s2: Set<'T>) =
+        let ss1 = Set.toList s1
+        let ss2 = Set.toList s2
+        let c = List.allPairs ss1 ss2
+        c

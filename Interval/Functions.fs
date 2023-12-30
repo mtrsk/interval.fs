@@ -1,7 +1,5 @@
 ﻿namespace Interval
 
-open Interval.Core
-
 module Functions =
     open Interval.Core
     open Interval.Helpers
@@ -41,25 +39,26 @@ module Functions =
     /// <summary>
     /// Computes the intersection of two bounded intervals
     /// </summary>
-    let rec intersection<'T when 'T: equality and 'T: comparison> (a: Interval<'T>) (b: Interval<'T>) =
+    let intersection<'T when 'T: equality and 'T: comparison> (a: Interval<'T>) (b: Interval<'T>) =
         match a, b with
         | Empty, _ -> Empty
         | _, Empty -> Empty
-        | Singleton i1, Singleton i2 ->
-            let newStart = max i1.Start i2.Start
-            let newEnd = min i1.End i2.End
-
-            if newStart < newEnd then
-                Singleton { Start = newStart; End = newEnd }
-            else
-                Empty
-        | Singleton s , Union u
+        | Singleton i1, Singleton i2 -> i1 * i2
+        | Singleton s, Union u
         | Union u, Singleton s ->
-            if Set.exists (fun x -> intersection x (Singleton s) <> Empty) (Set.map Singleton u) then
+            if Set.exists (fun x -> isNotEmpty (x * s)) u then
                 let group = Set.add s u
                 Union group
-            else Union u
-        | Union u1, Union u2 -> failwith "todo"
+            else
+                Union u
+        | Union u1, Union u2 ->
+            let u =
+                cartesian u1 u2 |> List.map (fun (x, y) -> x * y) |> List.choose tryGetSingleton
+
+            match u with
+            | [] -> Empty
+            | [ x ] -> Singleton x
+            | xs -> Union(Set.ofList xs)
 
     /// <summary>
     /// Computes the union of two bounded intervals
@@ -68,19 +67,7 @@ module Functions =
         match itv1, itv2 with
         | Empty, i2 -> i2
         | i1, Empty -> i1
-        | Singleton i1, Singleton i2 ->
-            let minStart = min i1.Start i2.Start
-            let maxStart = max i1.Start i2.Start
-            let minEnd = min i1.End i2.End
-            let maxEnd = max i1.End i2.End
-
-            if minEnd < maxStart then
-                let union =
-                    [ { Start = minStart; End = minEnd }; { Start = maxStart; End = maxEnd } ]
-                    |> Set.ofList
-                Union union
-            else
-                Singleton { Start = minStart; End = maxEnd }
+        | Singleton i1, Singleton i2 -> i1 + i2
         | Singleton s, Union u
         | Union u, Singleton s ->
             let group = Set.add s u
@@ -94,15 +81,18 @@ module Functions =
             match union (Singleton x) (Singleton item) with
             | Singleton _s -> true
             | _ -> false
+
         let update index x (clusters: DisjointSet) =
             bs
             |> List.removeAt index
             |> List.mapi (fun i item -> if isSingleton x item then clusters.Unite(index, i) else ())
+
         let toSet (i: Interval<'T>) =
             match i with
             | Empty -> Set.empty
             | Singleton boundedInterval -> Set.add boundedInterval Set.empty
             | Union boundedIntervalSet -> boundedIntervalSet
+
         let rec loop (intervals: BoundedInterval<'T> list) (index: int) (clusters: DisjointSet) =
             match intervals with
             | [] -> clusters
@@ -115,6 +105,7 @@ module Functions =
 
         let forest = DisjointSet(bs.Length)
         let sets = (loop bs 0 forest).GetIds()
+
         let groups =
             sets
             |> List.ofArray
@@ -122,9 +113,10 @@ module Functions =
             |> List.groupBy snd
             |> List.map (fun (_, y) -> y |> List.map fst |> List.sort |> List.map Singleton)
             |> List.map (List.fold union Empty)
+
         match groups with
         | [] -> Empty
-        | [x] -> x
+        | [ x ] -> x
         | _ ->
             let output = groups |> List.map toSet |> Set.ofList |> Set.fold Set.union Set.empty
             Union output
