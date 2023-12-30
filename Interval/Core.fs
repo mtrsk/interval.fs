@@ -83,14 +83,26 @@ module Core =
             let minEnd = min a.End b.End
             let maxEnd = max a.End b.End
             if minEnd < maxStart then
-                [ { Start = minStart; End = minEnd }; { Start = maxStart; End = maxEnd } ]
+                let set =
+                    [ { Start = minStart; End = minEnd }; { Start = maxStart; End = maxEnd } ]
+                    |> Set.ofList
+                Union set
             else
-                [ { Start = minStart; End = maxEnd } ]
+                Singleton { Start = minStart; End = maxEnd }
+
+        static member (*) (a: BoundedInterval<'T>, b: BoundedInterval<'T>) =
+            let newStart = max a.Start b.Start
+            let newEnd = min a.End b.End
+
+            if newStart < newEnd then
+                Singleton { Start = newStart; End = newEnd }
+            else
+                Empty
 
     /// <summary>
     /// Represents an interval, which can be either Empty or a BoundedInterval of type 'T.
     /// </summary>
-    type Interval<'T when 'T: equality and 'T: comparison> =
+    and Interval<'T when 'T: equality and 'T: comparison> =
         | Empty
         | Singleton of BoundedInterval<'T>
         | Union of BoundedInterval<'T> Set
