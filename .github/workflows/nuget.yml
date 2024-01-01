@@ -13,7 +13,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        token: ${{ github.token }}
+        with:
+          token: ${{ github.token }}
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 6.0.x
