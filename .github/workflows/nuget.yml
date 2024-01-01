@@ -13,10 +13,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        token: ${{ github.token }}
+        with:
+          token: ${{ github.token }}
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 6.0.x
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v24
+        with:
+          # Mostly to avoid GitHub rate limiting
+          extra_nix_config: |
+            access-tokens = github.com=${{ github.token }}
+
+      - name: Install Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
       - name: Test before releasing
         run: make test
       - name: Pack release

@@ -14,7 +14,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        token: ${{ github.token }}
+        with:
+          token: ${{ github.token }}
       - name: Create Release
         run: gh release create ${{ github.ref }} --generate-notes
         env:
