@@ -40,7 +40,7 @@ module Helpers =
         match a, b with
         | Singleton s1, Singleton s2 -> s1.Start < s2.Start
         | _ -> false
-
+        
     // TODO: Refactor this
     let cartesian<'T when 'T: equality and 'T: comparison> (s1: Set<'T>) (s2: Set<'T>) =
         let ss1 = Set.toList s1

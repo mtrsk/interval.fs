@@ -46,14 +46,16 @@ module Functions =
         | Singleton i1, Singleton i2 -> i1 * i2
         | Singleton s, Union u
         | Union u, Singleton s ->
-            if Set.exists (fun x -> isNotEmpty (x * s)) u then
+            if Set.exists (fun x -> Helpers.isNotEmpty (x * s)) u then
                 let group = Set.add s u
                 Union group
             else
                 Union u
         | Union u1, Union u2 ->
             let u =
-                cartesian u1 u2 |> List.map (fun (x, y) -> x * y) |> List.choose tryGetSingleton
+                Helpers.cartesian u1 u2
+                |> List.map (fun (x, y) -> x * y)
+                |> List.choose Helpers.tryGetSingleton
 
             match u with
             | [] -> Empty
@@ -61,10 +63,10 @@ module Functions =
             | xs -> Union(Set.ofList xs)
 
     /// <summary>
-    /// Computes the union of two bounded intervals
+    /// Computes the union of two intervals
     /// </summary>
-    let union<'T when 'T: equality and 'T: comparison> (itv1: Interval<'T>) (itv2: Interval<'T>) =
-        match itv1, itv2 with
+    let union<'T when 'T: equality and 'T: comparison> (interval1: Interval<'T>) (interval2: Interval<'T>) =
+        match interval1, interval2 with
         | Empty, i2 -> i2
         | i1, Empty -> i1
         | Singleton i1, Singleton i2 -> i1 + i2
@@ -76,6 +78,9 @@ module Functions =
             let group = Set.union u1 u2
             Union group
 
+    /// <summary>
+    /// Computes the union of multiple bounded intervals
+    /// </summary>
     let merge<'T when 'T: equality and 'T: comparison> (bs: BoundedInterval<'T> list) =
         let isSingleton x item =
             match union (Singleton x) (Singleton item) with
@@ -144,10 +149,8 @@ module Functions =
     /// Computes the qualitative relationship of two intervals
     /// </summary>
     let relate<'T when 'T: equality and 'T: comparison> (a: Interval<'T>) (b: Interval<'T>) =
-        let isEqualA = (intersection a b = a)
-        let isEqualB = (intersection a b = b)
-
-        match isEqualA, isEqualB with
+        let isSubset x y = ((intersection x y) = x)
+        match isSubset a b, isSubset b a with
         | true, true -> Equals
         | true, false when starts a b -> Starts
         | true, false when finishes a b -> Finishes
@@ -157,10 +160,24 @@ module Functions =
         | false, true -> Contains
         | false, false ->
             match (union a b, precedes a b, isEmpty <| intersection a b) with
-            | Singleton _interval, true, true -> Meets
-            | Singleton _interval, true, false -> Overlaps
-            | Singleton _interval, false, true -> MetBy
-            | Singleton _interval, false, false -> OverlappedBy
-            | Union _union, true, _ -> Before
-            | Union _union, false, _ -> After
-            | _ -> failwith "todo"
+            | Singleton _interval, true, true ->
+                // a ∪ b = { x .. y }, a < b, a ∩ b = ∅
+                Meets
+            | Singleton _interval, true, false ->
+                // a ∪ b = { x .. y }, a < b, a ∩ b ≠ ∅
+                Overlaps
+            | Singleton _interval, false, true ->
+                // a ∪ b = { x .. y }, a > b, a ∩ b = ∅
+                MetBy
+            | Singleton _interval, false, false ->
+                // a ∪ b = { x .. y }, a > b, a ∩ b ≠ ∅
+                OverlappedBy
+            | Union _union, true, _ ->
+                // a ∪ b = { x .. y } ∪ { z .. w }, a < b
+                Before
+            | Union _union, false, _ ->
+                // a ∪ b = { x .. y } ∪ { z .. w }, a > b
+                After
+            | Empty, _, _ ->
+                // a  ∪  b = ∅ ⇔ a = ∅ ^ b = ∅
+                Equals

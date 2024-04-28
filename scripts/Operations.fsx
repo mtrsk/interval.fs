@@ -1,6 +1,7 @@
 #r "../Interval/obj/Debug/net6.0/Interval.dll"
 
 open Interval.Core
+open Interval.Helpers
 open Interval.Functions
 
 // [1,5]
