@@ -1,5 +1,7 @@
 ﻿namespace Interval
 
+open Interval.Core
+
 module Functions =
     open Interval.Core
     open Interval.Helpers
@@ -46,16 +48,16 @@ module Functions =
         | Singleton i1, Singleton i2 -> i1 * i2
         | Singleton s, Union u
         | Union u, Singleton s ->
-            if Set.exists (fun x -> Helpers.isNotEmpty (x * s)) u then
+            if Set.exists (fun x -> isNotEmpty (x * s)) u then
                 let group = Set.add s u
                 Union group
             else
                 Union u
         | Union u1, Union u2 ->
             let u =
-                Helpers.cartesian u1 u2
+                cartesian u1 u2
                 |> List.map (fun (x, y) -> x * y)
-                |> List.choose Helpers.tryGetSingleton
+                |> List.choose tryGetSingleton
 
             match u with
             | [] -> Empty
@@ -81,22 +83,16 @@ module Functions =
     /// <summary>
     /// Computes the union of multiple bounded intervals
     /// </summary>
-    let merge<'T when 'T: equality and 'T: comparison> (bs: BoundedInterval<'T> list) =
-        let isSingleton x item =
-            match union (Singleton x) (Singleton item) with
-            | Singleton _s -> true
+    let generateForest<'T when 'T: equality and 'T: comparison> (bs: BoundedInterval<'T> list) =
+        let isUnionSingleton a b =
+            match union (Singleton a) (Singleton b) with
+            | Singleton _ -> true
             | _ -> false
 
-        let update index x (clusters: DisjointSet) =
+        let update index x (forest: DisjointSet) =
             bs
             |> List.removeAt index
-            |> List.mapi (fun i item -> if isSingleton x item then clusters.Unite(index, i) else ())
-
-        let toSet (i: Interval<'T>) =
-            match i with
-            | Empty -> Set.empty
-            | Singleton boundedInterval -> Set.add boundedInterval Set.empty
-            | Union boundedIntervalSet -> boundedIntervalSet
+            |> List.mapi (fun i item -> if isUnionSingleton x item then forest.Unite(index, i) else ())
 
         let rec loop (intervals: BoundedInterval<'T> list) (index: int) (clusters: DisjointSet) =
             match intervals with
@@ -108,15 +104,26 @@ module Functions =
                 update index x clusters |> ignore
                 loop xs (index + 1) clusters
 
+        // TODO: Improve this
         let forest = DisjointSet(bs.Length)
         let sets = (loop bs 0 forest).GetIds()
-
-        let groups =
+        let clusters =
             sets
             |> List.ofArray
             |> List.zip bs
             |> List.groupBy snd
             |> List.map (fun (_, y) -> y |> List.map fst |> List.sort |> List.map Singleton)
+        clusters
+
+    let merge<'T when 'T: equality and 'T: comparison> (bs: BoundedInterval<'T> list) =
+        let toSet (i: Interval<'T>) =
+            match i with
+            | Empty -> Set.empty
+            | Singleton boundedInterval -> Set.add boundedInterval Set.empty
+            | Union boundedIntervalSet -> boundedIntervalSet
+
+        let groups =
+            generateForest bs
             |> List.map (List.fold union Empty)
 
         match groups with

@@ -7,7 +7,7 @@ module Helpers =
         match i with
         | Empty -> true
         | _ -> false
-
+        
     let isNotEmpty = (fun x -> isEmpty x |> not)
 
     let tryGetSingleton (i: Interval<'T>) =
