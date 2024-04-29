@@ -170,9 +170,9 @@ Union (
 The whole reason for the existence of this package was to solve a particular issue at work, it's alpha quality at best, but usable.
 
 - [x] Setup a Nix devenv
-- [] Build the .Net package with Nix
-- [] Remove every silly `TODO` from the codebase, they smell
-- [] Add property based-testing
+- [ ] Build the .Net package with Nix
+- [ ] Remove every silly `TODO` from the codebase, they smell
+- [ ] Add property based-testing
 
 ### Acknowledgements
 
