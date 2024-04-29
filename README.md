@@ -167,6 +167,17 @@ Union (
 
 ## TODO
 
-### Acknoledgements
+The whole reason for the existence of this package was to solve a particular issue at work, it's alpha quality at best, but usable.
+
+- [x] Setup a Nix devenv
+- [ ] Build the .Net package with Nix
+- [ ] Remove every silly `TODO` from the codebase, they smell
+- [ ] Add property based-testing
+
+### Acknowledgements
+
+- [The original paper](https://cse.unl.edu/~choueiry/Documents/Allen-CACM1983.pdf)
+- [Thomas A. Alspaugh's page](https://thomasalspaugh.org/pub/fnd/allen.html)
+- [Marco Perone's blogpost](https://marcosh.github.io/post/2020/05/04/intervals-and-their-relations.html)
 
 

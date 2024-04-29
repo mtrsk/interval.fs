@@ -1,5 +1,7 @@
 ﻿namespace Interval
 
+open Interval.Core
+
 module Functions =
     open Interval.Core
     open Interval.Helpers
@@ -53,7 +55,9 @@ module Functions =
                 Union u
         | Union u1, Union u2 ->
             let u =
-                cartesian u1 u2 |> List.map (fun (x, y) -> x * y) |> List.choose tryGetSingleton
+                cartesian u1 u2
+                |> List.map (fun (x, y) -> x * y)
+                |> List.choose tryGetSingleton
 
             match u with
             | [] -> Empty
@@ -61,10 +65,10 @@ module Functions =
             | xs -> Union(Set.ofList xs)
 
     /// <summary>
-    /// Computes the union of two bounded intervals
+    /// Computes the union of two intervals
     /// </summary>
-    let union<'T when 'T: equality and 'T: comparison> (itv1: Interval<'T>) (itv2: Interval<'T>) =
-        match itv1, itv2 with
+    let union<'T when 'T: equality and 'T: comparison> (interval1: Interval<'T>) (interval2: Interval<'T>) =
+        match interval1, interval2 with
         | Empty, i2 -> i2
         | i1, Empty -> i1
         | Singleton i1, Singleton i2 -> i1 + i2
@@ -76,22 +80,19 @@ module Functions =
             let group = Set.union u1 u2
             Union group
 
-    let merge<'T when 'T: equality and 'T: comparison> (bs: BoundedInterval<'T> list) =
-        let isSingleton x item =
-            match union (Singleton x) (Singleton item) with
-            | Singleton _s -> true
+    /// <summary>
+    /// Computes the union of multiple bounded intervals
+    /// </summary>
+    let generateForest<'T when 'T: equality and 'T: comparison> (bs: BoundedInterval<'T> list) =
+        let isUnionSingleton a b =
+            match union (Singleton a) (Singleton b) with
+            | Singleton _ -> true
             | _ -> false
 
-        let update index x (clusters: DisjointSet) =
+        let update index x (forest: DisjointSet) =
             bs
             |> List.removeAt index
-            |> List.mapi (fun i item -> if isSingleton x item then clusters.Unite(index, i) else ())
-
-        let toSet (i: Interval<'T>) =
-            match i with
-            | Empty -> Set.empty
-            | Singleton boundedInterval -> Set.add boundedInterval Set.empty
-            | Union boundedIntervalSet -> boundedIntervalSet
+            |> List.mapi (fun i item -> if isUnionSingleton x item then forest.Unite(index, i) else ())
 
         let rec loop (intervals: BoundedInterval<'T> list) (index: int) (clusters: DisjointSet) =
             match intervals with
@@ -103,15 +104,26 @@ module Functions =
                 update index x clusters |> ignore
                 loop xs (index + 1) clusters
 
+        // TODO: Improve this
         let forest = DisjointSet(bs.Length)
         let sets = (loop bs 0 forest).GetIds()
-
-        let groups =
+        let clusters =
             sets
             |> List.ofArray
             |> List.zip bs
             |> List.groupBy snd
             |> List.map (fun (_, y) -> y |> List.map fst |> List.sort |> List.map Singleton)
+        clusters
+
+    let merge<'T when 'T: equality and 'T: comparison> (bs: BoundedInterval<'T> list) =
+        let toSet (i: Interval<'T>) =
+            match i with
+            | Empty -> Set.empty
+            | Singleton boundedInterval -> Set.add boundedInterval Set.empty
+            | Union boundedIntervalSet -> boundedIntervalSet
+
+        let groups =
+            generateForest bs
             |> List.map (List.fold union Empty)
 
         match groups with
@@ -144,10 +156,8 @@ module Functions =
     /// Computes the qualitative relationship of two intervals
     /// </summary>
     let relate<'T when 'T: equality and 'T: comparison> (a: Interval<'T>) (b: Interval<'T>) =
-        let isEqualA = (intersection a b = a)
-        let isEqualB = (intersection a b = b)
-
-        match isEqualA, isEqualB with
+        let isSubset x y = ((intersection x y) = x)
+        match isSubset a b, isSubset b a with
         | true, true -> Equals
         | true, false when starts a b -> Starts
         | true, false when finishes a b -> Finishes
@@ -157,10 +167,24 @@ module Functions =
         | false, true -> Contains
         | false, false ->
             match (union a b, precedes a b, isEmpty <| intersection a b) with
-            | Singleton _interval, true, true -> Meets
-            | Singleton _interval, true, false -> Overlaps
-            | Singleton _interval, false, true -> MetBy
-            | Singleton _interval, false, false -> OverlappedBy
-            | Union _union, true, _ -> Before
-            | Union _union, false, _ -> After
-            | _ -> failwith "todo"
+            | Singleton _interval, true, true ->
+                // a ∪ b = { x .. y }, a < b, a ∩ b = ∅
+                Meets
+            | Singleton _interval, true, false ->
+                // a ∪ b = { x .. y }, a < b, a ∩ b ≠ ∅
+                Overlaps
+            | Singleton _interval, false, true ->
+                // a ∪ b = { x .. y }, a > b, a ∩ b = ∅
+                MetBy
+            | Singleton _interval, false, false ->
+                // a ∪ b = { x .. y }, a > b, a ∩ b ≠ ∅
+                OverlappedBy
+            | Union _union, true, _ ->
+                // a ∪ b = { x .. y } ∪ { z .. w }, a < b
+                Before
+            | Union _union, false, _ ->
+                // a ∪ b = { x .. y } ∪ { z .. w }, a > b
+                After
+            | Empty, _, _ ->
+                // a  ∪  b = ∅ ⇔ a = ∅ ^ b = ∅
+                Equals

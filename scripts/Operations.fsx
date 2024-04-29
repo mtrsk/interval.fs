@@ -1,6 +1,7 @@
 #r "../Interval/obj/Debug/net6.0/Interval.dll"
 
 open Interval.Core
+open Interval.Helpers
 open Interval.Functions
 
 // [1,5]
@@ -62,5 +63,9 @@ let r4 = relate i3 i4
 printfn $"{i3} is {r4} to {i4}"
 
 let boundaries = [ b1; b2; b3; b4; b5 ]
-let clusters = merge(boundaries)
-clusters
+
+let forest = generateForest(boundaries)
+forest
+
+let merger = merge(boundaries)
+merger

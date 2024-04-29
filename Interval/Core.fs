@@ -2,6 +2,15 @@
 
 module Core =
     open System
+    
+    [<RequireQualifiedAccess>]
+    module Errors =
+        exception ImproperUsage of resourceName: string * expected: string
+        
+        /// <summary>
+        /// Represents an error that can occur during interval parsing.
+        /// </summary>
+        type ParseIntervalError = InvalidArgument of errorMessage: string
 
     [<CustomEquality; CustomComparison>]
     type BoundaryKind =
@@ -124,8 +133,3 @@ module Core =
         | OverlappedBy
         | Starts
         | StartedBy
-
-    /// <summary>
-    /// Represents an error that can occur during interval parsing.
-    /// </summary>
-    type ParseIntervalError = InvalidArgument of errorMessage: string
