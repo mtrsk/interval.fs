@@ -454,6 +454,7 @@ $RECYCLE.BIN/
 !.vscode/extensions.json
 
 # Configuration
+out
 *env*
 *.db
 database/*

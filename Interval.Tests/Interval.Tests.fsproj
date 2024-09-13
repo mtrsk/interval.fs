@@ -4,11 +4,10 @@
         <OutputType>Exe</OutputType>
         <IsPublishable>false</IsPublishable>
         <IsPackable>false</IsPackable>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="7.0.300" />
         <PackageReference Include="Expecto" Version="10.1.0" />
         <PackageReference Include="Expecto.FsCheck" Version="10.1.0" />
     </ItemGroup>

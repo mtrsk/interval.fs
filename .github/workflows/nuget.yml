@@ -30,10 +30,10 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@main
 
       - name: Test before releasing
-        run: make test
+        run: nix develop .#ci --impure -c just test
       - name: Pack release
-        run: dotnet pack -c Release /p:Version=$(echo ${{ github.ref_name }} | sed 's/v//g')
+        run: nix develop .#ci --impure -c just pack
       - name: Publish the package to nuget.org
-        run: dotnet nuget push */bin/Release/*.nupkg -k "${NUGET_API_KEY}" -s "https://api.nuget.org/v3/index.json" --skip-duplicate
+        run: nix develop .#ci --impure -c just release
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
