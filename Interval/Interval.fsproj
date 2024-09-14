@@ -1,12 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <PackageId>Interval.Fs</PackageId>
         <Authors>Marcos Benevides</Authors>
         <Description>An implementation of Allen's Interval Algebra, for .Net</Description>
     </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="FsToolkit.ErrorHandling" Version="4.16.0" />
+    </ItemGroup>
 
     <ItemGroup>
         <Compile Include="Core.fs" />

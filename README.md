@@ -1,9 +1,24 @@
 # interval.fs
 
+[![built with nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)<br>
 [![Build](https://github.com/mtrsk/interval.fs/actions/workflows/build.yml/badge.svg)](https://github.com/mtrsk/interval.fs/actions/workflows/build.yml)
-![Nuget](https://img.shields.io/nuget/v/interval.fs)
+[![Nuget](https://img.shields.io/nuget/v/interval.fs)](https://www.nuget.org/packages/interval.fs)
 
-An implementation of Allen's Interval Algebra, for .Net
+An implementation of Allen's Interval Algebra, for .Net.
+
+- [interval.fs](#intervalfs)
+  - [Usage](#usage)
+    - [Boundaries and Intervals](#boundaries-and-intervals)
+    - [Operations](#operations)
+      - [Intersection](#intersection)
+      - [Union](#union)
+      - [Relationships](#relationships)
+      - [Merge](#merge)
+  - [Development](#development)
+    - [With Nix](#with-nix)
+    - [Contributing](#contributing)
+  - [TODO](#todo)
+  - [Acknowledgements](#acknowledgements)
 
 ## Usage
 
@@ -165,16 +180,33 @@ Union (
 )
 ```
 
+## Development
+
+### With Nix
+
+This project uses [devenv.sh](https://devenv.sh/), so you don't need to have .Net or any other tools to run it. To start a development shell, just run:
+
+```shell
+nix develop --impure
+```
+now you'll have .Net and everything else required already setup for you, there is also a pletora of commands availiable by running `just`.
+
+To build the project purelly with Nix, you can run `nix build` (or `just bnix`).
+
+### Contributing
+
+If you find any bug, feel free to open either a PR or an Issue and tag me, I'll allocate some of my time to review it.
+
 ## TODO
 
 The whole reason for the existence of this package was to solve a particular issue at work, it's alpha quality at best, but usable.
 
 - [x] Setup a Nix devenv
-- [ ] Build the .Net package with Nix
-- [ ] Remove every silly `TODO` from the codebase, they smell
+- [x] Build the .Net package with Nix
 - [ ] Add property based-testing
+- [ ] Remove every silly `TODO` from the codebase, they smell
 
-### Acknowledgements
+## Acknowledgements
 
 - [The original paper](https://cse.unl.edu/~choueiry/Documents/Allen-CACM1983.pdf)
 - [Thomas A. Alspaugh's page](https://thomasalspaugh.org/pub/fnd/allen.html)

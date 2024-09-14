@@ -1,5 +1,5 @@
 {
-  description = "Development Environment";
+  description = "F# Development Environment";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -9,59 +9,114 @@
     };
   };
 
-  outputs = inputs@{ self, devenv, nixpkgs, ... }:
+  outputs =
+    inputs@{
+      self,
+      devenv,
+      nixpkgs,
+      ...
+    }:
     let
       # System types to support.
-      supportedSystems = [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ];
+      supportedSystems = [
+        "x86_64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
 
       # Helper function to generate an attrset '{ x86_64-linux = f "x86_64-linux"; ... }'.
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
 
       # Nixpkgs instantiated for supported system types.
-      nixpkgsFor = forAllSystems (system: import nixpkgs {
-        inherit system;
-      });
+      nixpkgsFor = forAllSystems (
+        system:
+        import nixpkgs {
+          inherit system;
+        }
+      );
     in
     {
-      devShells = forAllSystems (system:
+      packages = forAllSystems (
+        system:
         let
           pkgs = nixpkgsFor."${system}";
-          inherit (pkgs)
-            bash
-            gnumake
-            dotnetCorePackages;
-
-          dotnet = with dotnetCorePackages; combinePackages [
-            sdk_6_0
-          ];
-
-          dotnet_8 = with dotnetCorePackages; combinePackages [
-            sdk_8_0
-          ];
+          version = "0.1.0";
         in
         {
-          # `nix develop`
+          # `nix build`
+          default = pkgs.buildDotnetModule {
+            pname = "interval.fs";
+            version = version;
+            src = ./.;
+            projectFile = "Interval/Interval.fsproj";
+            nugetDeps = ./deps.nix;
+
+            dotnet-sdk =
+              with pkgs.dotnetCorePackages;
+              combinePackages [
+                sdk_6_0
+                sdk_7_0
+                sdk_8_0
+              ];
+            dotnet-runtime = pkgs.dotnetCorePackages.sdk_8_0;
+          };
+        }
+      );
+
+      devShells = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgsFor."${system}";
+          dotnet =
+            with pkgs.dotnetCorePackages;
+            combinePackages [
+              sdk_8_0
+            ];
+        in
+        {
+          # `nix develop .#ci`
+          # reduce the number of packages to the bare minimum needed for CI
+          ci = pkgs.mkShell {
+            buildInputs = with pkgs; [
+              git
+              just
+              dotnet
+            ];
+          };
+
+          # `nix develop --impure`
           default = devenv.lib.mkShell {
             inherit inputs pkgs;
             modules = [
-              ({ pkgs, lib, ... }: {
-                packages = [
-                  bash
-                  gnumake
-                ];
+              (
+                { pkgs, lib, ... }:
+                {
+                  packages = with pkgs; [
+                    bash
+                    just
 
-                languages.dotnet = {
-                  enable = true;
-                  package = dotnet;
-                };
+                    # for dotnet
+                    netcoredbg
+                    fsautocomplete
+                    fantomas
+                  ];
 
-                # looks for the .env by default
-                # additionaly, there is .filename
-                # if an arbitrary file is desired
-                dotenv.enable = true;
-              })
+                  languages.dotnet = {
+                    enable = true;
+                    package = dotnet;
+                  };
+
+                  # looks for the .env by default additionaly, there is .filename
+                  # if an arbitrary file is desired
+                  dotenv.enable = true;
+                }
+              )
             ];
           };
-        });
+        }
+      );
+
+      # nix fmt
+      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
     };
 }
