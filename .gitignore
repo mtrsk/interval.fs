@@ -460,4 +460,4 @@ $RECYCLE.BIN/
 # Configuration
 out
 output
-*env*
+.env
